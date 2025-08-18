@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  arcron:
+    build: .
+    container_name: arcron
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/app/config:ro
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    environment:
+      - TZ=UTC
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    networks:
+      - arcron-network
+
+  # Optional: Add a database for more advanced features
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: arcron-postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: arcron
+  #     POSTGRES_USER: arcron
+  #     POSTGRES_PASSWORD: arcron123
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - arcron-network
+
+  # Optional: Add Redis for caching and job queues
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: arcron-redis
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - arcron-network
+
+  # Optional: Add Prometheus for metrics
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: arcron-prometheus
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
+  #     - '--web.console.templates=/etc/prometheus/consoles'
+  #     - '--storage.tsdb.retention.time=200h'
+  #     - '--web.enable-lifecycle'
+  #   networks:
+  #     - arcron-network
+
+  # Optional: Add Grafana for visualization
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: arcron-grafana
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #   networks:
+  #     - arcron-network
+
+networks:
+  arcron-network:
+    driver: bridge
+
+volumes:
+  # postgres_data:
+  # redis_data:
+  # prometheus_data:
+  # grafana_data:

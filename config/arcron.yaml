@@ -1,0 +1,159 @@
+# Arcron Configuration File
+# AI-Powered Autonomous Cron Agent
+
+server:
+  host: "localhost"
+  port: 8080
+  read_timeout: "30s"
+  write_timeout: "30s"
+
+database:
+  driver: "sqlite"
+  dsn: "arcron.db"
+  max_conns: 10
+
+# Job Definitions
+jobs:
+  - name: "backup"
+    command: "rsync -av /data /backup"
+    type: "resource-intensive"
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    timeout: "1h"
+    retries: 3
+    priority: 1
+    environment:
+      BACKUP_PATH: "/backup"
+      DATA_PATH: "/data"
+
+  - name: "logrotate"
+    command: "logrotate /etc/logrotate.conf"
+    type: "light"
+    schedule: "0 0 * * *"  # Daily at midnight
+    timeout: "5m"
+    retries: 1
+    priority: 5
+    environment: {}
+
+  - name: "database_cleanup"
+    command: "mysql -e 'DELETE FROM logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)'"
+    type: "resource-intensive"
+    schedule: "0 3 * * 0"  # Weekly on Sunday at 3 AM
+    timeout: "30m"
+    retries: 2
+    priority: 2
+    environment:
+      MYSQL_HOST: "localhost"
+      MYSQL_USER: "arcron"
+      MYSQL_PASSWORD: ""
+
+  - name: "system_update"
+    command: "apt update && apt upgrade -y"
+    type: "resource-intensive"
+    schedule: "0 4 * * 0"  # Weekly on Sunday at 4 AM
+    timeout: "2h"
+    retries: 1
+    priority: 3
+    environment:
+      DEBIAN_FRONTEND: "noninteractive"
+
+  - name: "health_check"
+    command: "curl -f http://localhost:8080/health || exit 1"
+    type: "light"
+    schedule: "*/5 * * * *"  # Every 5 minutes
+    timeout: "30s"
+    retries: 2
+    priority: 10
+    environment: {}
+
+# Machine Learning Configuration
+ml:
+  model_path: "models/arcron_model"
+  training_data: "data/metrics.csv"
+  update_interval: "24h"
+  features:
+    - "cpu_usage"
+    - "memory_usage"
+    - "io_wait"
+    - "network_io"
+    - "hour_of_day"
+    - "day_of_week"
+    - "load_average"
+    - "disk_usage"
+
+# Logging Configuration
+logging:
+  level: "info"  # debug, info, warn, error
+  format: "json"  # json, text
+  output_file: "logs/arcron.log"
+
+# Advanced Settings
+advanced:
+  # Metrics collection interval
+  metrics_interval: "5s"
+  
+  # Schedule adjustment threshold (minutes)
+  adjustment_threshold: 5
+  
+  # Maximum concurrent jobs
+  max_concurrent_jobs: 10
+  
+  # Job queue size
+  job_queue_size: 100
+  
+  # Cleanup old records after
+  cleanup_after: "168h"  # 7 days
+  
+  # Enable web dashboard
+  enable_dashboard: true
+  
+  # Dashboard authentication
+  dashboard_auth:
+    enabled: false
+    username: "admin"
+    password: ""
+  
+  # Prometheus metrics endpoint
+  prometheus:
+    enabled: true
+    path: "/metrics"
+    port: 9090
+
+# Monitoring Thresholds
+thresholds:
+  cpu:
+    warning: 70.0
+    critical: 90.0
+  
+  memory:
+    warning: 80.0
+    critical: 95.0
+  
+  disk:
+    warning: 85.0
+    critical: 95.0
+  
+  network:
+    warning: 80.0
+    critical: 95.0
+
+# Alerting Configuration
+alerts:
+  enabled: false
+  email:
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 587
+    username: ""
+    password: ""
+    from: "arcron@example.com"
+    to: ["admin@example.com"]
+  
+  slack:
+    webhook_url: ""
+    channel: "#alerts"
+    username: "Arcron Bot"
+  
+  webhook:
+    url: ""
+    method: "POST"
+    headers:
+      Content-Type: "application/json"
