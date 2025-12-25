@@ -27,6 +27,7 @@ LDFLAGS=-ldflags "-X main.Version=${VERSION}"
 build:
 	@echo "Building Arcron..."
 	@mkdir -p ${BUILD_DIR}
+	@mkdir -p web/dist
 	go build ${LDFLAGS} -o ${BUILD_DIR}/${BINARY_NAME} ./cmd/arcron
 	@echo "Binary built: ${BUILD_DIR}/${BINARY_NAME}"
 

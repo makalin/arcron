@@ -16,6 +16,9 @@ type Config struct {
 	Jobs     []JobConfig    `yaml:"jobs" mapstructure:"jobs"`
 	ML       MLConfig       `yaml:"ml" mapstructure:"ml"`
 	Logging  LoggingConfig  `yaml:"logging" mapstructure:"logging"`
+	Advanced AdvancedConfig `yaml:"advanced" mapstructure:"advanced"`
+	Alerts   AlertsConfig   `yaml:"alerts" mapstructure:"alerts"`
+	Thresholds ThresholdsConfig `yaml:"thresholds" mapstructure:"thresholds"`
 }
 
 // ServerConfig holds server-related configuration
@@ -58,6 +61,82 @@ type LoggingConfig struct {
 	Level      string `yaml:"level" mapstructure:"level"`
 	Format     string `yaml:"format" mapstructure:"format"`
 	OutputFile string `yaml:"output_file" mapstructure:"output_file"`
+}
+
+// AdvancedConfig holds advanced configuration
+type AdvancedConfig struct {
+	MetricsInterval    time.Duration `yaml:"metrics_interval" mapstructure:"metrics_interval"`
+	AdjustmentThreshold int          `yaml:"adjustment_threshold" mapstructure:"adjustment_threshold"`
+	MaxConcurrentJobs  int          `yaml:"max_concurrent_jobs" mapstructure:"max_concurrent_jobs"`
+	JobQueueSize       int          `yaml:"job_queue_size" mapstructure:"job_queue_size"`
+	CleanupAfter       time.Duration `yaml:"cleanup_after" mapstructure:"cleanup_after"`
+	EnableDashboard    bool         `yaml:"enable_dashboard" mapstructure:"enable_dashboard"`
+	DashboardAuth      DashboardAuthConfig `yaml:"dashboard_auth" mapstructure:"dashboard_auth"`
+	Prometheus         PrometheusConfig    `yaml:"prometheus" mapstructure:"prometheus"`
+	EnableAlerts       bool         `yaml:"enable_alerts" mapstructure:"enable_alerts"`
+}
+
+// DashboardAuthConfig holds dashboard authentication configuration
+type DashboardAuthConfig struct {
+	Enabled  bool   `yaml:"enabled" mapstructure:"enabled"`
+	Username string `yaml:"username" mapstructure:"username"`
+	Password string `yaml:"password" mapstructure:"password"`
+}
+
+// PrometheusConfig holds Prometheus metrics configuration
+type PrometheusConfig struct {
+	Enabled bool   `yaml:"enabled" mapstructure:"enabled"`
+	Path    string `yaml:"path" mapstructure:"path"`
+	Port    int    `yaml:"port" mapstructure:"port"`
+}
+
+// AlertsConfig holds alerting configuration
+type AlertsConfig struct {
+	Enabled bool          `yaml:"enabled" mapstructure:"enabled"`
+	Email   EmailConfig   `yaml:"email" mapstructure:"email"`
+	Slack   SlackConfig   `yaml:"slack" mapstructure:"slack"`
+	Webhook WebhookConfig `yaml:"webhook" mapstructure:"webhook"`
+}
+
+// EmailConfig holds email alert configuration
+type EmailConfig struct {
+	Enabled  bool     `yaml:"enabled" mapstructure:"enabled"`
+	SMTPHost string   `yaml:"smtp_host" mapstructure:"smtp_host"`
+	SMTPPort int      `yaml:"smtp_port" mapstructure:"smtp_port"`
+	Username string   `yaml:"username" mapstructure:"username"`
+	Password string   `yaml:"password" mapstructure:"password"`
+	From     string   `yaml:"from" mapstructure:"from"`
+	To       []string `yaml:"to" mapstructure:"to"`
+}
+
+// SlackConfig holds Slack alert configuration
+type SlackConfig struct {
+	Enabled    bool   `yaml:"enabled" mapstructure:"enabled"`
+	WebhookURL string `yaml:"webhook_url" mapstructure:"webhook_url"`
+	Channel    string `yaml:"channel" mapstructure:"channel"`
+	Username   string `yaml:"username" mapstructure:"username"`
+}
+
+// WebhookConfig holds webhook alert configuration
+type WebhookConfig struct {
+	Enabled bool              `yaml:"enabled" mapstructure:"enabled"`
+	URL     string            `yaml:"url" mapstructure:"url"`
+	Method  string            `yaml:"method" mapstructure:"method"`
+	Headers map[string]string `yaml:"headers" mapstructure:"headers"`
+}
+
+// ThresholdsConfig holds monitoring thresholds
+type ThresholdsConfig struct {
+	CPU     ThresholdLevels `yaml:"cpu" mapstructure:"cpu"`
+	Memory  ThresholdLevels `yaml:"memory" mapstructure:"memory"`
+	Disk    ThresholdLevels `yaml:"disk" mapstructure:"disk"`
+	Network ThresholdLevels `yaml:"network" mapstructure:"network"`
+}
+
+// ThresholdLevels holds warning and critical thresholds
+type ThresholdLevels struct {
+	Warning  float64 `yaml:"warning" mapstructure:"warning"`
+	Critical float64 `yaml:"critical" mapstructure:"critical"`
 }
 
 // Load loads configuration from file
@@ -192,5 +271,26 @@ func setDefaults(config *Config) {
 	}
 	if config.Logging.Format == "" {
 		config.Logging.Format = "json"
+	}
+
+	// Advanced defaults
+	if config.Advanced.MetricsInterval == 0 {
+		config.Advanced.MetricsInterval = 5 * time.Second
+	}
+	if config.Advanced.AdjustmentThreshold == 0 {
+		config.Advanced.AdjustmentThreshold = 5
+	}
+	if config.Advanced.MaxConcurrentJobs == 0 {
+		config.Advanced.MaxConcurrentJobs = 10
+	}
+	if config.Advanced.JobQueueSize == 0 {
+		config.Advanced.JobQueueSize = 100
+	}
+	if config.Advanced.CleanupAfter == 0 {
+		config.Advanced.CleanupAfter = 168 * time.Hour // 7 days
+	}
+	if !config.Advanced.Prometheus.Enabled {
+		config.Advanced.Prometheus.Path = "/metrics"
+		config.Advanced.Prometheus.Port = 9090
 	}
 }
